@@ -1,0 +1,10 @@
+rfdetr
+supervision
+
+# Metrics (optional)
+wandb
+rfdetr[metrics]
+
+# Utilities
+opencv-python
+requests
