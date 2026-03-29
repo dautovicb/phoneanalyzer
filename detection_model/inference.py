@@ -3,10 +3,10 @@ import onnxruntime as ort
 from PIL import Image
 from pathlib import Path
 
-MODEL_PATH = "detect_phone.onnx"
+MODEL_PATH = "output/detect_phone_v2.onnx"
 INPUT_SIZE = 512
-CLASS_NAMES = {0: "objects", 1: "box", 2: "phone_back", 3: "phone_front"}
-PHONE_CLASSES = {2, 3}
+CLASS_NAMES = {0: "objects", 1: "box", 2: "case", 3: "phone_back", 4: "phone_front", 5: "phone_side", 6: "ui_battery", 7: "ui_memory", 8: "ui_memory_about"}
+PHONE_CLASSES = {1, 2, 3, 4, 5, 6, 7, 8}
 
 
 def load_model(model_path: str = str(MODEL_PATH)) -> ort.InferenceSession:
@@ -25,18 +25,20 @@ def preprocess(image: Image.Image) -> np.ndarray:
 
 def postprocess(dets, labels, orig_w, orig_h, threshold=0.5):
     dets = dets[0]     
-    labels = labels[0]  
+    labels = labels[0]
 
     exp = np.exp(labels - np.max(labels, axis=1, keepdims=True))
     probs = exp / np.sum(exp, axis=1, keepdims=True)
-
+   
     class_ids = np.argmax(probs, axis=1)
     confidences = np.max(probs, axis=1)
-
-    results = []
+    
+    results = {}
+ 
     for i in range(len(dets)):
         conf = confidences[i]
         cls_id = class_ids[i]
+        
         if conf < threshold or cls_id not in PHONE_CLASSES:
             continue
 
@@ -46,10 +48,16 @@ def postprocess(dets, labels, orig_w, orig_h, threshold=0.5):
         x2 = min(orig_w, int((cx + w / 2) * orig_w))
         y2 = min(orig_h, int((cy + h / 2) * orig_h))
 
-        results.append((CLASS_NAMES[cls_id], float(conf), x1, y1, x2, y2))
 
-    results.sort(key=lambda r: r[1], reverse=True)
-    return results
+        if(cls_id not in results or conf > results[cls_id][0]):
+            results[cls_id] = ( float(conf), x1, y1, x2, y2)
+    
+    final_results = [
+        (CLASS_NAMES[clsid], d[0], d[1], d[2], d[3], d[4]) 
+        for clsid, d in results.items()
+    ]
+    
+    return final_results
 
 
 def detect_and_crop(image: Image.Image, session: ort.InferenceSession, threshold=0.5):
@@ -84,6 +92,6 @@ if __name__ == "__main__":
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         crops.sort(key=lambda c: c[1], reverse=True)  
-        cls_name, conf, crop = crops[0]
-        out_path = output_dir / f"{cls_name}_{conf:.2f}.jpg"
-        crop.save(out_path)
+        for cls_name, conf, crop in crops:
+            out_path = output_dir / f"{cls_name}_{conf:.2f}.jpg"
+            crop.save(out_path)
