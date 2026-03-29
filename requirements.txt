@@ -1,9 +1,12 @@
 rfdetr
 supervision
+rfdetr[train,loggers]
+rfdetr[metrics]
+onnx
+onnxruntime-gpu
 
 # Metrics (optional)
 wandb
-rfdetr[metrics]
 
 # Utilities
 opencv-python
