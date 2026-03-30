@@ -34,7 +34,7 @@ The following augmentation was applied to create 4 versions of each source image
 
 Dataset: Expanded training data to >1000 images.<br>
 Classes Added: Introduced 4 new classes to handle accessories and screen information (case, ui_battery, ui_memory, ui_memory_about).<br>
-Improvements: Better handling of edge cases where phones are in cases, and foundational work for the upcoming OCR extraction pipeline.
+Improvements: Better handling of edge cases where phones are in cases, and foundational work for the upcoming OCR extraction pipeline.<br>
 <img width="395" height="207" alt="W B Chart 3_30_2026, 11_45_59 AM" src="https://github.com/user-attachments/assets/589e2359-d339-4254-bc93-18aae5fea5c2" />
 
 *v1.0*
