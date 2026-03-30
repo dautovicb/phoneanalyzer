@@ -53,7 +53,7 @@ def postprocess(dets, labels, orig_w, orig_h, threshold=0.5):
             results[cls_id] = ( float(conf), x1, y1, x2, y2)
     
     final_results = [
-        (CLASS_NAMES[clsid], d[0], d[1], d[2], d[3], d[4]) 
+        (clsid, d[0], d[1], d[2], d[3], d[4]) 
         for clsid, d in results.items()
     ]
     
@@ -67,8 +67,8 @@ def detect_and_crop(image: Image.Image, session: ort.InferenceSession, threshold
     detections = postprocess(dets, labels, orig_w, orig_h, threshold)
 
     crops = []
-    for cls_name, conf, x1, y1, x2, y2 in detections:
-        crops.append((cls_name, conf, image.crop((x1, y1, x2, y2))))
+    for cls_id, conf, x1, y1, x2, y2 in detections:
+        crops.append((CLASS_NAMES[cls_id], conf, image.crop((x1, y1, x2, y2))))
     return crops
 
 
