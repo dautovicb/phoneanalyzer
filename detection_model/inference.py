@@ -6,7 +6,7 @@ from pathlib import Path
 MODEL_PATH = "output/detect_phone_v2.onnx"
 INPUT_SIZE = 512
 CLASS_NAMES = {0: "objects", 1: "box", 2: "case", 3: "phone_back", 4: "phone_front", 5: "phone_side", 6: "ui_battery", 7: "ui_memory", 8: "ui_memory_about"}
-PHONE_CLASSES = {3, 4, 6, 7, 8}
+PHONE_CLASSES = {1, 3, 4, 6, 7, 8}
 
 
 def load_model(model_path: str = str(MODEL_PATH)) -> ort.InferenceSession:

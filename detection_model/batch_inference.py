@@ -2,22 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, Tuple
 
-import numpy as np
 from PIL import Image, UnidentifiedImageError
-from rapidocr_onnxruntime import RapidOCR
 
 from inference import detect_and_crop, load_model, MODEL_PATH
+from ocr_utils import extract_specs_from_best
 
 # Common image suffixes for listing photos.
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
 # class_name -> (confidence, source_image_path, crop_image)
 BestResult = Dict[str, Tuple[float, Path, Image.Image]]
-UI_CLASSES = {"ui_battery", "ui_memory", "ui_memory_about"}
 
 
 def iter_images(input_dir: Path, recursive: bool) -> Iterable[Path]:
@@ -50,60 +47,32 @@ def collect_best_detections(input_dir: Path, model_path: str, threshold: float, 
     return best_by_class
 
 
-def run_ocr(ocr_engine: RapidOCR, image: Image.Image) -> List[str]:
-    ocr_results, _ = ocr_engine(np.array(image))
-    print(f"OCR results: {ocr_results}")
-    if not ocr_results:
-        return []
-    texts = []
-    for row in ocr_results:
-        if len(row) < 2:
-            continue
-        text_part = row[1]
-        if isinstance(text_part, tuple) and text_part:
-            text = str(text_part[0])
-        else:
-            text = str(text_part)
-        if text.strip():
-            texts.append(text.strip())
-    return texts
+def build_analysis(best_by_class: BestResult) -> Dict:
+    specs = extract_specs_from_best(best_by_class)
+    return {
+        "internal_memory": specs["internal_memory"],
+        "battery_percentage": specs["battery_health_percent"],
+        "hasBox": "box" in best_by_class,
+        "detections": {
+            cls_name: {
+                "confidence": round(info[0], 4),
+                "source_image": str(info[1]),
+            }
+            for cls_name, info in sorted(best_by_class.items())
+        },
+        "ocr_text": specs["ocr_text"],
+        "best_crops": best_by_class,
+    }
 
 
-def extract_battery_health(texts: List[str]) -> Optional[str]:
-    text_blob = " ".join(texts)
-    direct_match = re.search(r"(\d{2,3})\s*%", text_blob)
-    if direct_match:
-        value = int(direct_match.group(1))
-        if 50 <= value <= 100:
-            return f"{value}%"
-
-    for value in re.findall(r"\d{2,3}", text_blob):
-        n = int(value)
-        if 50 <= n <= 100:
-            return f"{n}%"
-    return None
-
-
-def extract_internal_memory(texts: List[str]) -> Optional[str]:
-    text_blob = " ".join(texts)
-    normalized = text_blob.replace(",", ".")
-
-    tb_match = re.search(r"(\d+(?:\.\d{1,2})?)\s*T\s*B", normalized, re.IGNORECASE)
-    if tb_match:
-        size = tb_match.group(1)
-        if size.endswith(".0"):
-            size = size[:-2]
-        return f"{size} TB"
-
-    gb_match = re.search(r"(\d+)\s*G\s*B", normalized, re.IGNORECASE)
-    if gb_match:
-        return f"{int(gb_match.group(1))} GB"
-
-    for candidate in re.findall(r"\d{2,4}", normalized):
-        value = int(candidate)
-        if value in {64, 128, 256, 512}:
-            return f"{value} GB"
-    return None
+def analyze_folder(input_dir: Path, model_path: str, threshold: float, recursive: bool = False) -> Dict:
+    best_by_class = collect_best_detections(
+        input_dir=input_dir,
+        model_path=model_path,
+        threshold=threshold,
+        recursive=recursive,
+    )
+    return build_analysis(best_by_class)
 
 
 def save_results(best_by_class: BestResult, output_dir: Path) -> None:
@@ -127,20 +96,7 @@ def save_results(best_by_class: BestResult, output_dir: Path) -> None:
 
 
 def save_ocr_extractions(best_by_class: BestResult, output_dir: Path) -> None:
-    ocr_engine = RapidOCR()
-    ui_ocr: Dict[str, List[str]] = {}
-
-    for cls_name, (_, _, crop) in best_by_class.items():
-        if cls_name not in UI_CLASSES:
-            continue
-        texts = run_ocr(ocr_engine, crop)
-        ui_ocr[cls_name] = texts
-
-    extraction = {
-        "battery_health_percent": extract_battery_health(ui_ocr.get("ui_battery", [])),
-        "internal_memory": extract_internal_memory(ui_ocr.get("ui_memory", []) + ui_ocr.get("ui_memory_about", [])),
-        "ocr_text": ui_ocr,
-    }
+    extraction = extract_specs_from_best(best_by_class)
     extraction_path = output_dir / "extracted_specs.json"
     extraction_path.write_text(json.dumps(extraction, indent=2), encoding="utf-8")
 
