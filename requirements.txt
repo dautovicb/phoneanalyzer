@@ -4,6 +4,8 @@ rfdetr[train,loggers]
 rfdetr[metrics]
 onnx
 onnxruntime-gpu
+rapidocr-onnxruntime
+torchmetrics
 
 # Metrics (optional)
 wandb
@@ -11,3 +13,4 @@ wandb
 # Utilities
 opencv-python
 requests
+pillow
