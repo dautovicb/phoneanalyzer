@@ -2,8 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 1. Load the model
-model = tf.keras.models.load_model('cracked_phone_detector_convnext.keras')
+model = tf.keras.models.load_model('cracked_phone_detector_model.keras')
 
 def predict_phone(image_path):
     # 2. Load and Preprocess the image
@@ -16,9 +15,8 @@ def predict_phone(image_path):
     # We have 1 image, so shape becomes
     img_array = np.expand_dims(img_array, axis=0)
 
-    # 4. Run Prediction
     predictions = model.predict(img_array)
-    score = predictions # The sigmoid output (value between 0 and 1)
+    score = predictions.item() # The sigmoid output (value between 0 and 1)
 
     # 5. Interpret the class mapping
     # Note: image_dataset_from_directory sorts folders alphabetically
@@ -33,13 +31,13 @@ def predict_phone(image_path):
         label = "NOT CRACKED"
         confidence = score * 100
 
-    # 6. Show the result
-    plt.imshow(img)
-    plt.title(f"Result: {label} ({confidence:.2f}% confidence)")
-    plt.axis('off')
-    plt.show()
+
+    # plt.imshow(img)
+    # plt.title(f"Result: {label} ({confidence:.2f}% confidence)")
+    # plt.axis('off')
+    # plt.show()
     
     print(f"The model is {confidence:.2f}% confident that the phone is {label}")
 
-# --- RUN IT ---
-predict_phone('test_image.jpg') # Replace with your image file name
+
+predict_phone('testimg6.jpg')
