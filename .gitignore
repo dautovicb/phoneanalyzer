@@ -3,4 +3,3 @@ wandb
 testimages
 batch_output
 venv
-*.keras
