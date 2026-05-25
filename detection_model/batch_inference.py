@@ -101,6 +101,54 @@ def save_ocr_extractions(best_by_class: BestResult, output_dir: Path) -> None:
     extraction_path.write_text(json.dumps(extraction, indent=2), encoding="utf-8")
 
 
+def save_all_crops_from_folder(
+    input_dir: Path,
+    output_dir: Path,
+    model_path: str,
+    threshold: float,
+    recursive: bool = False,
+) -> None:
+    """
+        Helper function used for modifying the crack detection dataset
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    crops_dir = output_dir / "all_crops"
+    crops_dir.mkdir(parents=True, exist_ok=True)
+
+    session = load_model(model_path)
+    manifest = []
+
+    for image_path in iter_images(input_dir, recursive):
+        try:
+            image = Image.open(image_path).convert("RGB")
+        except (UnidentifiedImageError, OSError) as err:
+            print(f"Skipping unreadable image: {image_path} ({err})")
+            continue
+
+        crops = detect_and_crop(image, session, threshold=threshold)
+        if not crops:
+            continue
+
+        source_stem = image_path.stem
+        for det_idx, (cls_name, conf, crop) in enumerate(crops, start=1):
+            safe_cls = cls_name.replace("/", "_").replace("\\", "_").replace(" ", "_")
+            out_name = f"{source_stem}_{safe_cls}_{det_idx:03d}_{conf:.4f}.jpg"
+            out_path = crops_dir / out_name
+            crop.save(out_path)
+
+            manifest.append(
+                {
+                    "source_image": str(image_path),
+                    "class": cls_name,
+                    "confidence": round(conf, 6),
+                    "output_crop": str(out_path),
+                }
+            )
+
+    manifest_path = output_dir / "all_crops_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run phone detection on all images in a folder and keep only the highest-confidence crop per class."
@@ -116,6 +164,8 @@ def main() -> None:
     if not input_dir.exists() or not input_dir.is_dir():
         raise SystemExit(f"Input directory does not exist or is not a directory: {input_dir}")
 
+    #save_all_crops_from_folder(input_dir, Path(args.output_dir), args.model, args.threshold, args.recursive)
+
     best_by_class = collect_best_detections(
         input_dir=input_dir,
         model_path=args.model,
@@ -126,7 +176,7 @@ def main() -> None:
     if not best_by_class:
         print("No matching detections found in the input folder.")
         return
-
+    
     output_dir = Path(args.output_dir)
     save_results(best_by_class, output_dir)
     save_ocr_extractions(best_by_class, output_dir)
