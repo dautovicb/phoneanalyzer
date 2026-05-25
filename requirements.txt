@@ -7,11 +7,19 @@ onnxruntime-gpu
 rapidocr-onnxruntime
 torchmetrics
 
+# Core Machine Learning
+tensorflow>=2.15.0
+numpy
+scikit-learn
+
 # Metrics (optional)
 wandb
+matplotlib
+seaborn
 
 # Utilities
 opencv-python
 requests
 pillow
 streamlit
+
