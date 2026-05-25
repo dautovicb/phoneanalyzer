@@ -11,6 +11,7 @@ torchmetrics
 tensorflow>=2.15.0
 numpy
 scikit-learn
+keras
 
 # Metrics (optional)
 wandb
