@@ -39,15 +39,22 @@ def extract_listing_id(olx_url: str) -> Optional[int]:
     return None
 
 
-def fetch_listing_images(listing_id: int) -> Tuple[str, List[str]]:
+def fetch_listing_detail(listing_id: int) -> dict:
     session = requests.Session()
     session.headers.update(DEFAULT_HEADERS)
 
     api_url = f"{DETAIL_BASE_URL}/{listing_id}"
+    resp = session.get(api_url, timeout=20)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def fetch_listing_images(listing_id: int) -> Tuple[str, List[str]]:
+    session = requests.Session()
+    session.headers.update(DEFAULT_HEADERS)
+
     try:
-        resp = session.get(api_url, timeout=20)
-        resp.raise_for_status()
-        detail = resp.json()
+        detail = fetch_listing_detail(listing_id)
         title = str(detail.get("title") or f"Listing {listing_id}")
         images = detail.get("images") or []
         image_urls = [u for u in images if isinstance(u, str) and u.strip()]

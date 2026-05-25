@@ -1,9 +1,13 @@
+from pathlib import Path
+
 from transformers import pipeline
+
+MODEL_DIR = Path(__file__).resolve().parent / "bertic"
 
 ner = pipeline(
     "ner",
-    model="./bertic",
-    aggregation_strategy="simple"
+    model=str(MODEL_DIR),
+    aggregation_strategy="simple",
 )
 
 tests = [
@@ -93,6 +97,7 @@ def extract_features(text: str) -> dict:
     return {k: v[0] for k, v in features.items()}
 
 
-for text in tests:
-    print(f"{'─'*60}")
-    print(f"{text} -> {extract_features(text)}")
+if __name__ == "__main__":
+    for text in tests:
+        print(f"{'-'*60}")
+        print(f"{text} -> {extract_features(text)}")
