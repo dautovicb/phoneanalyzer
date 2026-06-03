@@ -8,7 +8,7 @@ rapidocr-onnxruntime
 torchmetrics
 
 # Core Machine Learning
-tensorflow>=2.15.0
+tensorflow
 numpy
 scikit-learn
 keras
@@ -17,6 +17,10 @@ keras
 wandb
 matplotlib
 seaborn
+
+# NLP
+transformers
+torch
 
 # Utilities
 opencv-python

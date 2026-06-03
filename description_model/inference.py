@@ -43,9 +43,10 @@ def merge_entities(results):
     merged.append(current)
     return merged
 
-def extract_features(text: str) -> dict:
+def extract_features(text: str) -> tuple[dict, list]:
     results = ner(text)
     results = merge_entities(results)
+    raw_entities = results
     
     features = {
         "brand": (None, 0),
@@ -94,7 +95,7 @@ def extract_features(text: str) -> dict:
         elif group == "BOX":
             update("box", word.lower(), score)
     
-    return {k: v[0] for k, v in features.items()}
+    return {k: v[0] for k, v in features.items()}, raw_entities
 
 
 if __name__ == "__main__":

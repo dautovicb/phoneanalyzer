@@ -24,8 +24,7 @@ def iter_images(input_dir: Path, recursive: bool) -> Iterable[Path]:
         yield from (p for p in input_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES)
 
 
-def collect_best_detections(input_dir: Path, model_path: str, threshold: float, recursive: bool) -> BestResult:
-    session = load_model(model_path)
+def collect_best_detections(input_dir: Path, session: "ort.InferenceSession", threshold: float, recursive: bool) -> BestResult:
     best_by_class: BestResult = {}
 
     for image_path in iter_images(input_dir, recursive):
@@ -65,10 +64,12 @@ def build_analysis(best_by_class: BestResult) -> Dict:
     }
 
 
-def analyze_folder(input_dir: Path, model_path: str, threshold: float, recursive: bool = False) -> Dict:
+def analyze_folder(input_dir: Path, threshold: float, session: "ort.InferenceSession | None" = None, model_path: str | None = None, recursive: bool = False) -> Dict:
+    if session is None:
+        session = load_model(model_path)
     best_by_class = collect_best_detections(
         input_dir=input_dir,
-        model_path=model_path,
+        session=session,
         threshold=threshold,
         recursive=recursive,
     )
@@ -108,9 +109,7 @@ def save_all_crops_from_folder(
     threshold: float,
     recursive: bool = False,
 ) -> None:
-    """
-        Helper function used for modifying the crack detection dataset
-    """
+    """Helper function used for modifying the crack detection dataset."""
     output_dir.mkdir(parents=True, exist_ok=True)
     crops_dir = output_dir / "all_crops"
     crops_dir.mkdir(parents=True, exist_ok=True)
