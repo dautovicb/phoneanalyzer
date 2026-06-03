@@ -4,13 +4,25 @@ from PIL import Image
 from pathlib import Path
 
 MODEL_PATH = "output/detect_phone_v2.onnx"
+# Absolute path resolved against this package so callers don't reconstruct it.
+DEFAULT_MODEL_PATH = str(Path(__file__).resolve().parent / MODEL_PATH)
 INPUT_SIZE = 512
 CLASS_NAMES = {0: "objects", 1: "box", 2: "case", 3: "phone_back", 4: "phone_front", 5: "phone_side", 6: "ui_battery", 7: "ui_memory", 8: "ui_memory_about"}
 PHONE_CLASSES = {1, 3, 4, 6, 7, 8}
 
+_session: "ort.InferenceSession | None" = None
 
-def load_model(model_path: str = str(MODEL_PATH)) -> ort.InferenceSession:
+
+def load_model(model_path: str = DEFAULT_MODEL_PATH) -> ort.InferenceSession:
     return ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+
+
+def get_session(model_path: str = DEFAULT_MODEL_PATH) -> ort.InferenceSession:
+    """Lazily load and cache the detection session (persists across Streamlit reruns)."""
+    global _session
+    if _session is None:
+        _session = load_model(model_path)
+    return _session
 
 
 def preprocess(image: Image.Image) -> np.ndarray:

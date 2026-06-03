@@ -7,8 +7,8 @@ from typing import Dict, Iterable, Tuple
 
 from PIL import Image, UnidentifiedImageError
 
-from inference import detect_and_crop, load_model, MODEL_PATH
-from ocr_utils import extract_specs_from_best
+from .inference import detect_and_crop, load_model, MODEL_PATH
+from .ocr_utils import extract_specs_from_best
 
 # Common image suffixes for listing photos.
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
