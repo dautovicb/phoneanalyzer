@@ -1,19 +1,3 @@
-"""Merger — combines raw OLX data, NLP (BERTic NER) output, and CV output into
-one clean, structured listing dict ready to be written to the database.
-
-Priority rules
---------------
-model:                  NLP (NER from title/description) only
-storage_gb:             NLP (description) > CV (OCR from photo) > OLX attribute
-battery_health_pct:     NLP (text mention) > CV (photo of battery settings screen) > None
-red_flag_cracked_*:     NLP OR CV — either source can set it to 1
-red_flag_icloud_locked: NLP only
-red_flag_sim_locked:    NLP only
-red_flag_not_functioning: NLP only
-has_*:                  NLP OR CV
-condition_rating:       CV only
-"""
-
 import re
 
 def _int_or_none(value) -> int | None:
@@ -24,7 +8,6 @@ def _int_or_none(value) -> int | None:
 
 
 def _parse_storage_from_attribute(raw_value: str) -> int | None:
-    """Parse OLX interna-memorija attribute string, e.g. '256 GB' → 256."""
     if not raw_value:
         return None
     m = re.search(r"(\d+)", raw_value)
@@ -32,7 +15,6 @@ def _parse_storage_from_attribute(raw_value: str) -> int | None:
 
 
 def _either_bool(nlp: dict, cv: dict, key: str) -> int:
-    """Return 1 if either NLP or CV flagged this key as truthy."""
     return int(bool(nlp.get(key)) or bool(cv.get(key)))
 
 

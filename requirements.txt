@@ -1,30 +1,27 @@
-rfdetr
-supervision
-rfdetr[train,loggers]
-rfdetr[metrics]
-onnx
-onnxruntime-gpu
+# Inference dependencies for phoneanalyzer.
+# Everything needed to run core.pipeline.analyze_listing() and the demo app.
+# For training/export/eval, see requirements-train.txt.
+
+# Object detection (ONNX runtime; code uses CPUExecutionProvider).
+# Swap for onnxruntime-gpu if you have CUDA and want GPU inference.
+onnxruntime
+
+# OCR for on-screen battery/storage specs (detection_model/ocr_utils.py)
 rapidocr-onnxruntime
-torchmetrics
 
-# Core Machine Learning
-tensorflow
-numpy
-scikit-learn
-keras
-
-# Metrics (optional)
-wandb
-matplotlib
-seaborn
-
-# NLP
+# BERTic NER model for description parsing (description_model/inference.py)
 transformers
 torch
 
-# Utilities
-opencv-python
-requests
-pillow
-streamlit
+# Crack classifier (crack_detection/predict.py)
+tensorflow
 
+# Imaging / numerics
+numpy
+pillow
+
+# OLX API client (core/olx_client.py)
+requests
+
+# Demo UI — only needed to run demo/app.py
+streamlit

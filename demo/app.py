@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Dict
 
+# Put the module root on sys.path so `core` and the model packages import cleanly
+# when launched via `streamlit run demo/app.py`. Removed once the package is
+# pip-installed (`pip install -e .`).
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import streamlit as st  # type: ignore
 
-import pipeline
-from pipeline import AnalysisResult
+from core import pipeline
+from core.pipeline import AnalysisResult
 
 
 def apply_custom_styles() -> None:
@@ -14,15 +22,14 @@ def apply_custom_styles() -> None:
         """
         <style>
         .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
-        .listing-banner {
-            padding: 1rem 1.25rem;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(99,102,241,0.09) 100%);
-            border: 1px solid rgba(99,102,241,0.2);
-            margin-bottom: 1.4rem;
+        .price-tag {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1.1;
+            margin: 0.2rem 0 1.4rem;
         }
-        .listing-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
-        .listing-price { font-size: 1.5rem; font-weight: 700; color: #2563eb; }
+        .price-tag .price-unit { font-size: 1.3rem; font-weight: 600; opacity: 0.75; margin-left: 0.35rem; }
         .results-card {
             padding: 0.75rem 1rem;
             border: 1px solid rgba(120,120,120,0.18);
@@ -47,16 +54,14 @@ def apply_custom_styles() -> None:
 
 
 def render_result(merged: Dict, cv_summary: Dict, bertic_summary: Dict, bertic_raw: list, analysis: Dict) -> None:
-    title = merged.get("title") or ""
     price = merged.get("price")
-    price_str = f"{price}" if price else "Price not listed"
-    st.markdown(
-        f'<div class="listing-banner">'
-        f'<div class="listing-title">{title}</div>'
-        f'<div class="listing-price">{price_str}</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    if price:
+        st.markdown(
+            f'<div class="price-tag">{price}<span class="price-unit">KM</span></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown('<div class="price-tag">Price not listed</div>', unsafe_allow_html=True)
 
     model_label = ((merged.get("model") or "").title() or "N/A").upper()
     storage_value = merged.get("storage_gb")
@@ -80,12 +85,14 @@ def render_result(merged: Dict, cv_summary: Dict, bertic_summary: Dict, bertic_r
         ("SIM locked", merged.get("red_flag_sim_locked")),
         ("Not functioning", merged.get("red_flag_not_functioning")),
     ]
-    pills_html = ""
-    for label, flagged in flags:
-        if flagged:
-            pills_html += f'<span class="flag-pill" style="background:#fef2f2;color:#c0392b;border:1px solid #f5c6c6">{label}</span> '
-        else:
-            pills_html += f'<span class="flag-pill" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">{label}</span> '
+    detected = [label for label, flagged in flags if flagged]
+    if detected:
+        pills_html = "".join(
+            f'<span class="flag-pill" style="background:#fef2f2;color:#c0392b;border:1px solid #f5c6c6">{label}</span> '
+            for label in detected
+        )
+    else:
+        pills_html = '<span class="flag-pill" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">None detected</span>'
     st.markdown(
         f'<div style="margin-bottom:1.2rem">'
         f'<div class="small-note" style="margin-bottom:0.45rem">RED FLAGS</div>'

@@ -13,15 +13,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import numpy as np
 import requests
 
-from crack_detection.predict import predict_crack
-from description_model.inference import extract_features
-from detection_model.batch_inference import IMAGE_SUFFIXES, analyze_folder
-from detection_model.inference import get_session
-from merger import merge
-from olx_client import extract_listing_id, fetch_listing_detail, fetch_listing_images
+from models.crack_detection.predict import predict_crack
+from models.description_model.inference import extract_features
+from models.detection_model.batch_inference import IMAGE_SUFFIXES, analyze_folder
+from models.detection_model.inference import get_session
+
+from .merger import merge
+from .olx_client import extract_listing_id, fetch_listing_detail, fetch_listing_images
 
 DETECTION_THRESHOLD = 0.45
 
