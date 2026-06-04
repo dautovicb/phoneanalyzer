@@ -68,12 +68,10 @@ def merge(raw: dict, nlp: dict, cv: dict) -> dict:
         "red_flag_sim_locked":       int(bool(nlp.get("red_flag_sim_locked"))),
         "red_flag_not_functioning":  int(bool(nlp.get("red_flag_not_functioning"))),
 
-        # Accessories — NLP OR CV
-        "has_charger":      _either_bool(nlp, cv, "has_charger"),
+        # Packaging — NLP OR CV
         "has_original_box": _either_bool(nlp, cv, "has_original_box"),
 
         # CV only
-        "condition_rating":  float(cv.get("condition_rating") or 0.0),
         "damage_confidence": float(cv.get("damage_confidence") or 0.0),
 
         # Pipeline state

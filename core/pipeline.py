@@ -163,7 +163,6 @@ def summarize_cv(analysis: Dict) -> Dict:
         "red_flag_cracked_front": int(front_cracked),
         "red_flag_cracked_back": int(back_cracked),
         "has_original_box": 1 if analysis.get("hasBox") else 0,
-        "condition_rating": float(analysis.get("condition_rating") or 0.0),
         "damage_confidence": max(float(analysis.get("damage_confidence") or 0.0), crack_confidence),
         "crack_sources": crack_sources,
     }
