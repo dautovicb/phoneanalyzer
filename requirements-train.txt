@@ -3,14 +3,14 @@
 -r requirements.txt
 
 # RF-DETR object detector — training & ONNX export
-# (detection_model/train.py, detection_model/export.py)
+# (detection_model/training/train.py, detection_model/training/export.py)
 rfdetr[train,loggers,metrics]
 
-# Detection evaluation metrics (detection_model/test.py)
+# Detection evaluation metrics (detection_model/training/test.py)
 torchmetrics
 tqdm
 
-# Experiment tracking (detection_model/train.py)
+# Experiment tracking (detection_model/training/train.py)
 wandb
 
 # Crack classifier training (crack_detection/training/cracks.py)

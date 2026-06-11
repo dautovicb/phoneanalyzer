@@ -184,7 +184,6 @@ Augmentation (4 versions per source image):
 - Random brightness adjustment between −15% and +15%
 - Random Gaussian blur between 0 and 1.3 pixels
 
-<!-- TODO: replace with your own chart -->
 <img width="395" height="207" alt="RF-DETR training metrics" src="https://github.com/user-attachments/assets/589e2359-d339-4254-bc93-18aae5fea5c2" />
 
 ### Description Parsing (BERTić NER)
@@ -207,18 +206,12 @@ Listing titles and descriptions are written in Bosnian/Croatian/Serbian. A fine-
 
 Entities below a confidence threshold are discarded; the highest-scoring entity per field wins. See [`models/description_model/inference.py`](models/description_model/inference.py).
 
-<!-- TODO: add NER training/evaluation chart -->
-<!-- ![BERTić NER — training & evaluation metrics](docs/images/ner_training.png) -->
-> _Training/evaluation charts for the NER model go here._
 
 ### Crack Detection (ConvNeXt)
 
-A binary **Keras CNN** classifies `phone_front` and `phone_back` crops as cracked / not cracked (224×224 input, sigmoid output). Either a positive crack prediction here **or** a textual mention in the description raises the corresponding red flag.
+A binary **ConvNeXt** classifies `phone_front` and `phone_back` crops as cracked / not cracked (224×224 input, sigmoid output). Either a positive crack prediction here **or** a textual mention in the description raises the corresponding red flag.
 
-<!-- TODO: add crack-detection training chart -->
-<!-- ![Crack detector — training metrics](docs/images/crack_training.png) -->
-> _Training/evaluation charts for the crack detector go here._
-
+![Accuracy crack detection](image.png)
 ### Spec OCR (RapidOCR)
 
 For UI screenshots (`ui_battery`, `ui_memory`, `ui_memory_about`), **RapidOCR** reads the raw text and dedicated parsers extract **battery health %** and **internal storage (GB)** - currently tuned for iOS settings screens. See [`models/detection_model/ocr_utils.py`](models/detection_model/ocr_utils.py).
@@ -231,9 +224,9 @@ Training, export, and evaluation scripts live alongside each model under `models
 
 | Task                          | Script                                           |
 | ----------------------------- | ------------------------------------------------ |
-| Train the RF-DETR detector    | `models/detection_model/train.py`                |
-| Export the detector to ONNX   | `models/detection_model/export.py`               |
-| Evaluate the detector         | `models/detection_model/test.py`                 |
+| Train the RF-DETR detector    | `models/detection_model/training/train.py`       |
+| Export the detector to ONNX   | `models/detection_model/training/export.py`      |
+| Evaluate the detector         | `models/detection_model/training/test.py`        |
 | Train the crack classifier    | `models/crack_detection/training/cracks.py`      |
 
 Install the training dependencies first:

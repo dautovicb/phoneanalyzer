@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 
 import requests
 
-from models.crack_detection.predict import load_crack_model, predict_crack
+from models.crack_detection.inference import load_crack_model, predict_crack
 from models.description_model.inference import extract_features, get_ner
 from models.detection_model.batch_inference import IMAGE_SUFFIXES, analyze_folder
 from models.detection_model.inference import get_session

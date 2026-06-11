@@ -13,7 +13,7 @@ rapidocr-onnxruntime
 transformers
 torch
 
-# Crack classifier (crack_detection/predict.py)
+# Crack classifier (crack_detection/inference.py)
 tensorflow
 
 # Imaging / numerics

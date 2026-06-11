@@ -1,6 +1,6 @@
 from pathlib import Path
 
-MODEL_DIR = Path(__file__).resolve().parent / "bertic"
+MODEL_DIR = Path(__file__).resolve().parent / "model"
 
 _ner = None
 

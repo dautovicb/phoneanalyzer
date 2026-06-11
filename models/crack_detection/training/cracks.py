@@ -7,7 +7,7 @@ from tensorflow.keras import layers, models, optimizers
 from sklearn.metrics import confusion_matrix, classification_report
 
 # config
-base_path = 'dataset'
+base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dataset')
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
 

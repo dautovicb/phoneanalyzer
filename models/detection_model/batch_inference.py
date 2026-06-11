@@ -7,7 +7,7 @@ from typing import Dict, Iterable, Tuple
 
 from PIL import Image, UnidentifiedImageError
 
-from .inference import detect_and_crop, load_model, MODEL_PATH
+from .inference import detect_and_crop, load_model, DEFAULT_MODEL_PATH
 from .ocr_utils import extract_specs_from_best
 
 # Common image suffixes for listing photos.
@@ -66,7 +66,7 @@ def build_analysis(best_by_class: BestResult) -> Dict:
 
 def analyze_folder(input_dir: Path, threshold: float, session: "ort.InferenceSession | None" = None, model_path: str | None = None, recursive: bool = False) -> Dict:
     if session is None:
-        session = load_model(model_path)
+        session = load_model(model_path) if model_path else load_model()
     best_by_class = collect_best_detections(
         input_dir=input_dir,
         session=session,
@@ -153,7 +153,7 @@ def main() -> None:
         description="Run phone detection on all images in a folder and keep only the highest-confidence crop per class."
     )
     parser.add_argument("input_dir", type=str, help="Folder containing listing images")
-    parser.add_argument("--model", type=str, default=str(MODEL_PATH), help="Path to ONNX model")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL_PATH, help="Path to ONNX model")
     parser.add_argument("--threshold", type=float, default=0.5, help="Minimum confidence threshold")
     parser.add_argument("--output-dir", type=str, default="batch_output", help="Directory to write best crops")
     parser.add_argument("--recursive", action="store_true", help="Scan input folder recursively")
@@ -167,7 +167,7 @@ def main() -> None:
 
     best_by_class = collect_best_detections(
         input_dir=input_dir,
-        model_path=args.model,
+        session=load_model(args.model),
         threshold=args.threshold,
         recursive=args.recursive,
     )

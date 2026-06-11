@@ -3,7 +3,7 @@ import onnxruntime as ort
 from PIL import Image
 from pathlib import Path
 
-MODEL_PATH = "output/detect_phone_v2.onnx"
+MODEL_PATH = "model/detect_phone_v2.onnx"
 # Absolute path resolved against this package so callers don't reconstruct it.
 DEFAULT_MODEL_PATH = str(Path(__file__).resolve().parent / MODEL_PATH)
 INPUT_SIZE = 512
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Detect phones and export crops")
     parser.add_argument("image", type=str, help="Path to input image")
-    parser.add_argument("--model", type=str, default=str(MODEL_PATH))
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL_PATH)
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--output-dir", type=str, default=".")
     args = parser.parse_args()

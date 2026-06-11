@@ -1,14 +1,20 @@
 import json
+import sys
+from pathlib import Path
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 import os
 import onnxruntime as ort
 from PIL import Image
+
+# inference.py lives one level up, in the detection_model package root.
+_PKG_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_PKG_DIR))
 from inference import preprocess, postprocess, load_model
 from tqdm import tqdm
 import torch
 
-MODEL_PATH = "output/detect_phone_v2.onnx"
-DATASET_PATH = "dataset/test"
+MODEL_PATH = str(_PKG_DIR / "model" / "detect_phone_v2.onnx")
+DATASET_PATH = str(_PKG_DIR / "dataset" / "test")
 ANNOTATIONS = DATASET_PATH + "/_annotations.coco.json"
 INPUT_SIZE = 512
 
