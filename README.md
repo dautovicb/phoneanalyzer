@@ -2,7 +2,7 @@
 
 > AI-powered analysis of second-hand smartphone listings from [OLX.ba](https://olx.ba).
 
-**Smartphone Analyzer** takes a smartphone listing (its photos, title, and description) and automatically extracts the features a buyer actually cares about — model, storage, battery health, packaging, and condition red flags such as cracked screens or iCloud locks. It combines **Computer Vision** and **NLP** into a single pipeline that turns a messy listing into one clean, structured record.
+**Smartphone Analyzer** takes a smartphone listing (its photos, title, and description) and extracts the features a buyer actually cares about - model, storage, battery health, packaging and red flags such as a cracked screen, iCloud lock, non-functioning parts and more. It combines **Computer Vision** and **NLP** into a single pipeline that turns a messy listing into one clean, structured record.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
@@ -12,8 +12,6 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [How It Works](#how-it-works)
-- [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Output Schema](#output-schema)
@@ -31,74 +29,14 @@
 
 When buying a used phone, the key signals are scattered: some live in the **photos** (a cracked back, a battery-health screenshot, the original box), and some live in the **text** (the title says "iPhone 13 Pro 256GB", the description mentions "iCloud locked"). This project fuses both:
 
-- **Computer Vision** — detects the phone, its packaging, and on-screen settings; flags physical damage.
-- **OCR** — reads battery health and storage from screenshots of the iOS settings screens.
-- **NLP** — extracts model, storage, condition, and red flags from the free-text Bosnian/Croatian/Serbian listing description.
-- **Fusion** — a merger reconciles all three sources into a single record with explicit priority rules.
+- **Object Detection** - detects the phone and the orientation, packaging, ui elements (battery health, storage) 
+- **OCR** - reads battery health and storage from detected images.
+- **NLP** - extracts model, storage, condition, and red flags from the natural language, Bosnian/Croatian/Serbian listing description.
+- **Fusion** - a merger reconciles all three sources into a single record with explicit priority rules.
 
 The result is a structured, database-ready record per listing.
 
 > **Note:** OCR-based spec extraction is currently tuned for **iPhones** (iOS Battery and Storage settings screens).
-
----
-
-## How It Works
-
-```
-                       OLX.ba listing URL
-                               │
-               ┌───────────────┴────────────────┐
-               ▼                                 ▼
-            Images                       Title + Description
-               │                                 │
-               ▼                                 ▼
-        ┌─────────────┐                   ┌───────────────┐
-        │   RF-DETR   │                   │    BERTić     │
-        │  detection  │                   │      NER      │
-        └──────┬──────┘                   └──────┬────────┘
-               │                                 │
-       ┌───────┴────────┐                  model, storage,
-       ▼                ▼                  battery, condition,
-   UI parts      phone front / back        red flags
-       │                │                        │
-       ▼                ▼                        │
- ┌───────────┐    ┌─────────────┐                │
- │  RapidOCR │    │   ConvNeXt  │                │
- │battery/mem│    │     CNN     │                │
- └─────┬─────┘    └──────┬──────┘                │
-       └────────┬────────┘                       │
-                ▼                                │
-           CV summary ──────────┐                │
-                                ▼                ▼
-                         ┌──────────────────────────┐
-                         │          Merger          │
-                         │  (priority-based fusion) │
-                         └────────────┬─────────────┘
-                                      ▼
-                              Merged listing record
-```
-
-The single entry point, `analyze_listing(url)`, runs this whole flow and returns the merged record plus per-source diagnostics.
-
----
-
-## Project Structure
-
-```
-phoneanalyzer/
-├── core/                       # Orchestration + fusion (framework-agnostic)
-│   ├── pipeline.py             # analyze_listing(), AnalysisResult, PipelineError
-│   ├── merger.py               # Reconciles OLX + NLP + CV into one record
-│   └── olx_client.py           # OLX.ba API client
-├── demo/
-│   └── app.py                  # Streamlit demo UI
-├── models/
-│   ├── detection_model/        # RF-DETR object detector (ONNX) + OCR utils
-│   ├── description_model/      # BERTić NER for listing text
-│   └── crack_detection/        # Keras CNN crack classifier
-├── requirements.txt            # Inference dependencies
-└── requirements-train.txt      # Training/export/eval dependencies
-```
 
 ---
 
@@ -107,11 +45,11 @@ phoneanalyzer/
 ### Prerequisites
 
 - **Python 3.10+**
-- **[Git LFS](https://git-lfs.com/)** — model weights (`.onnx`, `.keras`, `.safetensors`) are stored via Git LFS. Install it **before** cloning, then pull the weights:
+- **[Git LFS](https://git-lfs.com/)** - model weights (`.onnx`, `.keras`, `.safetensors`) and datasets are stored via Git LFS. Install it **before** cloning, then pull:
 
 ```bash
 git lfs install
-git clone <repo-url>
+git clone https://github.com/dautovicb/phoneanalyzer.git
 cd phoneanalyzer
 git lfs pull
 ```
@@ -167,7 +105,7 @@ else:
 
 ### Demo app
 
-A Streamlit UI is provided to try the pipeline interactively — paste a listing URL and inspect every stage (merged record, detections, crops, NER entities):
+A Streamlit UI is provided to try the pipeline interactively - paste a listing URL and inspect every stage (merged record, detections, crops, NER entities):
 
 ```bash
 streamlit run demo/app.py
@@ -208,7 +146,7 @@ streamlit run demo/app.py
 
 The starting point of the vision pipeline is an **RF-DETR** object detector (exported to ONNX) that locates the phone, its packaging, and relevant on-screen settings.
 
-**Supported classes (v2):**
+**Supported classes:**
 - **Hardware:** `phone_front`, `phone_back`, `box`, `case` (phone back with case)
 - **Software/UI screens:** `ui_battery`, `ui_memory`, `ui_memory_about`
 
@@ -234,7 +172,7 @@ Augmentation (4 versions per source image):
 
 ### Description Parsing (BERTić NER)
 
-Listing titles and descriptions are written in Bosnian/Croatian/Serbian (often mixed with English). A fine-tuned **[BERTić](https://huggingface.co/classla/bcms-bertic)** token-classification (NER) model extracts structured fields from this free text.
+Listing titles and descriptions are written in Bosnian/Croatian/Serbian. A fine-tuned **[BERTić](https://huggingface.co/classla/bcms-bertic)** token-classification (NER) model extracts structured fields from this free text.
 
 **Entity tags:**
 
@@ -244,11 +182,11 @@ Listing titles and descriptions are written in Bosnian/Croatian/Serbian (often m
 | `MOD`   | Model              | *iPhone 13 Pro*          |
 | `MEM`   | Storage            | *256GB*                  |
 | `BATT`  | Battery health     | *89%*                    |
-| `COND`  | Condition claim    | *kao nov / like new*     |
+| `COND`  | Condition claim    | *kao nov*     |
 | `FAIL`  | Issues / defects   | *ne radi, puknut ekran*  |
 | `ICL`   | iCloud status      | *icloud locked*          |
 | `SIM`   | SIM lock status    | *sim locked*             |
-| `BOX`   | Packaging          | *kutija / box*           |
+| `BOX`   | Packaging          | *kutija*           |
 
 Entities below a confidence threshold are discarded; the highest-scoring entity per field wins. See [`models/description_model/inference.py`](models/description_model/inference.py).
 
@@ -256,7 +194,7 @@ Entities below a confidence threshold are discarded; the highest-scoring entity 
 <!-- ![BERTić NER — training & evaluation metrics](docs/images/ner_training.png) -->
 > _Training/evaluation charts for the NER model go here._
 
-### Crack Detection (CNN)
+### Crack Detection (ConvNeXt)
 
 A binary **Keras CNN** classifies `phone_front` and `phone_back` crops as cracked / not cracked (224×224 input, sigmoid output). Either a positive crack prediction here **or** a textual mention in the description raises the corresponding red flag.
 
@@ -266,7 +204,7 @@ A binary **Keras CNN** classifies `phone_front` and `phone_back` crops as cracke
 
 ### Spec OCR (RapidOCR)
 
-For UI screenshots (`ui_battery`, `ui_memory`, `ui_memory_about`), **RapidOCR** reads the raw text and dedicated parsers extract **battery health %** and **internal storage (GB)** — currently tuned for iOS settings screens. See [`models/detection_model/ocr_utils.py`](models/detection_model/ocr_utils.py).
+For UI screenshots (`ui_battery`, `ui_memory`, `ui_memory_about`), **RapidOCR** reads the raw text and dedicated parsers extract **battery health %** and **internal storage (GB)** - currently tuned for iOS settings screens. See [`models/detection_model/ocr_utils.py`](models/detection_model/ocr_utils.py).
 
 ---
 
