@@ -211,7 +211,7 @@ Entities below a confidence threshold are discarded; the highest-scoring entity 
 
 A binary **ConvNeXt** classifies `phone_front` and `phone_back` crops as cracked / not cracked (224×224 input, sigmoid output). Either a positive crack prediction here **or** a textual mention in the description raises the corresponding red flag.
 
-![Accuracy crack detection](image.png)
+![Accuracy crack detection](assets/cracks.png)
 ### Spec OCR (RapidOCR)
 
 For UI screenshots (`ui_battery`, `ui_memory`, `ui_memory_about`), **RapidOCR** reads the raw text and dedicated parsers extract **battery health %** and **internal storage (GB)** - currently tuned for iOS settings screens. See [`models/detection_model/ocr_utils.py`](models/detection_model/ocr_utils.py).
@@ -238,7 +238,8 @@ pip install -r requirements-train.txt
 > Detection training logs to [Weights & Biases](https://wandb.ai/); set up your W&B account (or disable logging) before running.
 
 ---
-
+## Poster
+![](assets/poster.png)
 ## License
 
 Released under the [MIT License](LICENSE).
