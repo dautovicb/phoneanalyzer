@@ -22,6 +22,7 @@
   - [Spec OCR (RapidOCR)](#spec-ocr-rapidocr)
 - [Training](#training)
 - [License](#license)
+- [Poster](#poster)
 
 ---
 
