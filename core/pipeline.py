@@ -15,8 +15,8 @@ from typing import Dict, List, Optional
 
 import requests
 
-from models.crack_detection.predict import predict_crack
-from models.description_model.inference import extract_features
+from models.crack_detection.predict import load_crack_model, predict_crack
+from models.description_model.inference import extract_features, get_ner
 from models.detection_model.batch_inference import IMAGE_SUFFIXES, analyze_folder
 from models.detection_model.inference import get_session
 
@@ -36,6 +36,26 @@ class PipelineError(Exception):
     """Raised for expected, user-facing failures (bad URL, no images, fetch error)."""
 
 
+def preload_models() -> None:
+    """Load all three models up front so the first analyze_listing() call is not slow.
+
+    Optional — each model is a lazy singleton and loads on first use anyway.
+    Call this once at startup in long-running processes (UI, server, worker).
+    """
+    get_session()
+    load_crack_model()
+    get_ner()
+
+
+_RED_FLAG_LABELS = [
+    ("red_flag_cracked_front", "Cracked front"),
+    ("red_flag_cracked_back", "Cracked back"),
+    ("red_flag_icloud_locked", "iCloud locked"),
+    ("red_flag_sim_locked", "SIM locked"),
+    ("red_flag_not_functioning", "Not functioning"),
+]
+
+
 @dataclass
 class AnalysisResult:
     merged: Dict
@@ -43,6 +63,33 @@ class AnalysisResult:
     bertic_summary: Dict
     bertic_raw: list
     analysis: Dict
+
+    def summary(self) -> str:
+        """Human-readable report of the merged record."""
+        m = self.merged
+        price = f"{m['price']} KM" if m.get("price") else "not listed"
+        storage = f"{m['storage_gb']} GB" if m.get("storage_gb") else "unknown"
+        battery = f"{m['battery_health_pct']}%" if m.get("battery_health_pct") else "unknown"
+        flags = [label for key, label in _RED_FLAG_LABELS if m.get(key)]
+
+        lines = [
+            m.get("title") or f"Listing {m.get('id')}",
+            m.get("url") or "",
+            "",
+            f"  Price:           {price}",
+            f"  Model:           {(m.get('model') or 'unknown').title()}",
+            f"  Storage:         {storage}",
+            f"  Battery health:  {battery}",
+            f"  Condition claim: {m.get('condition_claim') or 'none'}",
+            f"  Original box:    {'yes' if m.get('has_original_box') else 'no'}",
+            f"  Red flags:       {', '.join(flags) if flags else 'none detected'}",
+        ]
+        if m.get("damage_confidence"):
+            lines.append(f"  Damage conf.:    {m['damage_confidence']:.2f}")
+        return "\n".join(line for line in lines if line is not None)
+
+    def __str__(self) -> str:
+        return self.summary()
 
 
 # --- Image download -------------------------------------------------------

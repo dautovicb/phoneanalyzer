@@ -76,22 +76,39 @@ This is a superset of the inference requirements, adding RF-DETR, Weights & Bias
 
 ## Usage
 
+### CLI
+
+Analyze one or more listings from the command line:
+
+```bash
+python cli.py "https://olx.ba/artikal/12345678"               # readable summary
+python cli.py "https://olx.ba/artikal/12345678" --json        # merged record as JSON
+python cli.py <url1> <url2> <url3>                            # models load once, then each URL is analyzed
+```
+
+Status messages go to stderr, results to stdout, so `--json` output pipes cleanly. Exits non-zero if any listing failed.
+
 ### Python API
 
 The pipeline is exposed through `core.pipeline`. Run from the module root (or add it to `sys.path`):
 
 ```python
-from core.pipeline import analyze_listing, PipelineError
+from core.pipeline import analyze_listing, preload_models, PipelineError
+
+preload_models()  # optional: warm all three models up front (long-running processes)
 
 try:
     result = analyze_listing("https://olx.ba/artikal/12345678")
 except PipelineError as err:
     print(f"Could not analyze listing: {err}")
 else:
+    print(result.summary())       # human-readable report
     print(result.merged)          # final database-ready record
     print(result.bertic_summary)  # what the NLP model extracted
     print(result.cv_summary)      # what the vision pipeline extracted
 ```
+
+Models are lazy singletons - they load on first use and stay cached for the life of the process, so repeated `analyze_listing` calls only pay the load cost once. `preload_models()` just moves that cost to startup.
 
 `analyze_listing` returns an `AnalysisResult` dataclass:
 

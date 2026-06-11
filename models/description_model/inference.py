@@ -1,25 +1,22 @@
 from pathlib import Path
 
-from transformers import pipeline
-
 MODEL_DIR = Path(__file__).resolve().parent / "bertic"
 
-ner = pipeline(
-    "ner",
-    model=str(MODEL_DIR),
-    aggregation_strategy="simple",
-)
+_ner = None
 
-tests = [
-    "iPhone 13 Pro 256GB baterija 89% kao nov kutija",
-    "Samsung S23 128GB 91% odlično stanje icloud slobodan",
-    "iPhone 12 64GB 76% ne radi Face ID mjenjan ekran",
-    "Huawei P30 Pro 128GB dual SIM 78% dobro stanje bez kutije",
-    "IPHONE 16 PRO 128GB 90% BATERIJA NATURAL TITANIUM",
-    "iphone 15 512gb esim baterija 97% kao novo puna kutija",
-    "Samsung A54 128GB 86% very good condition box included",
-    "iPhone 11 128GB 79% puknut ekran icloud slobodan",
-]
+
+def get_ner():
+    """Lazily load and cache the BERTic NER pipeline."""
+    global _ner
+    if _ner is None:
+        from transformers import pipeline
+
+        _ner = pipeline(
+            "ner",
+            model=str(MODEL_DIR),
+            aggregation_strategy="simple",
+        )
+    return _ner
 
 def merge_entities(results):
     if not results:
@@ -44,7 +41,7 @@ def merge_entities(results):
     return merged
 
 def extract_features(text: str) -> tuple[dict, list]:
-    results = ner(text)
+    results = get_ner()(text)
     results = merge_entities(results)
     raw_entities = results
     
@@ -99,6 +96,8 @@ def extract_features(text: str) -> tuple[dict, list]:
 
 
 if __name__ == "__main__":
-    for text in tests:
+    import sys
+
+    for text in sys.argv[1:]:
         print(f"{'-'*60}")
         print(f"{text} -> {extract_features(text)}")
