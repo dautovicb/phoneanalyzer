@@ -33,8 +33,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    print("Loading models...", file=sys.stderr)
-    preload_models()
+    #print("Loading models...", file=sys.stderr)
+    #preload_models()
 
     records = []
     failed = 0
