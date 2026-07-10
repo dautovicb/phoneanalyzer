@@ -36,6 +36,10 @@ class PipelineError(Exception):
     """Raised for expected, user-facing failures (bad URL, no images, fetch error)."""
 
 
+class ListingNotFoundError(PipelineError):
+    """Raised when the OLX listing no longer exists (HTTP 404/410) — do not retry."""
+
+
 def preload_models() -> None:
     """Load all three models up front so the first analyze_listing() call is not slow.
 
@@ -150,6 +154,24 @@ def _bool_from_phrase(value: str | None, positive_re: re.Pattern, negative_re: r
 
 # --- Raw OLX record -------------------------------------------------------
 
+def attributes_map(detail: Optional[Dict]) -> Dict[str, str]:
+    """Flatten OLX's structured attributes into {attr_code: value}.
+
+    OLX exposes specs (storage, RAM, colour, …) as a top-level `attributes` list
+    of {attr_code, name, value, …}. We key by attr_code (lower-cased) so the merger
+    can fall back to them when text/image extraction misses a field.
+    """
+    out: Dict[str, str] = {}
+    for a in (detail or {}).get("attributes") or []:
+        if not isinstance(a, dict):
+            continue
+        code = a.get("attr_code") or a.get("name")
+        value = a.get("value")
+        if code and value is not None:
+            out[str(code).strip().lower()] = str(value)
+    return out
+
+
 def build_raw_listing(
     detail: Optional[Dict],
     listing_id: int,
@@ -157,6 +179,7 @@ def build_raw_listing(
     title_fallback: str,
     image_urls: List[str],
     description_override: Optional[str] = None,
+    attributes: Optional[Dict[str, str]] = None,
 ) -> Dict:
     title = title_fallback
     description = description_override or ""
@@ -178,6 +201,7 @@ def build_raw_listing(
         "date": date,
         "images": ",".join(image_urls),
         "url": url,
+        "attributes": attributes or {},
     }
 
 
@@ -242,8 +266,14 @@ def summarize_bertic(text: str) -> tuple[Dict, list]:
 
 # --- Public entry point ---------------------------------------------------
 
-def analyze_listing(url: str) -> AnalysisResult:
+def analyze_listing(url: str, detail: Optional[Dict] = None) -> AnalysisResult:
     """Run the full pipeline for an OLX listing URL.
+
+    If `detail` (a raw OLX listing-detail dict) is supplied, it's used as-is and
+    no detail fetch is made — this lets a caller that already fetched the listing
+    (e.g. the backend ingestion job) avoid a redundant round-trip. When omitted,
+    the detail is fetched from the URL so standalone/CLI use still works from a
+    URL alone. Images are always downloaded here regardless.
 
     Raises PipelineError for expected, user-facing failures.
     """
@@ -254,20 +284,30 @@ def analyze_listing(url: str) -> AnalysisResult:
     with tempfile.TemporaryDirectory() as tmp:
         img_dir = Path(tmp) / str(listing_id)
         try:
-            detail = fetch_listing_detail(listing_id)
+            if detail is None:
+                detail = fetch_listing_detail(listing_id)
             title = str(detail.get("title") or f"Listing {listing_id}")
             image_urls = detail.get("images") or []
             image_urls = [u for u in image_urls if isinstance(u, str) and u.strip()]
             if not image_urls:
                 title, image_urls = fetch_listing_images(listing_id)
             saved = download_images(image_urls, img_dir)
+        except requests.HTTPError as err:
+            status = err.response.status_code if err.response is not None else None
+            if status in (404, 410):
+                raise ListingNotFoundError(
+                    f"Listing {listing_id} no longer exists on OLX (HTTP {status})."
+                ) from err
+            raise PipelineError(f"Failed to fetch listing: {err}") from err
         except Exception as err:
             raise PipelineError(f"Failed to fetch listing: {err}") from err
 
+        # Missing/undownloadable images are non-fatal: we can still recover the
+        # model, storage and battery from the description text and OLX attributes.
         if saved == 0:
-            raise PipelineError("No listing images could be downloaded.")
-
-        analysis = analyze_folder(img_dir, threshold=DETECTION_THRESHOLD, session=get_session())
+            analysis = {}
+        else:
+            analysis = analyze_folder(img_dir, threshold=DETECTION_THRESHOLD, session=get_session())
 
     additional = (detail.get("additional") or {}) if detail else {}
     description = additional.get("description") or (detail.get("short_description") if detail else None) or ""
@@ -282,6 +322,7 @@ def analyze_listing(url: str) -> AnalysisResult:
         title_fallback=title,
         image_urls=image_urls,
         description_override=description,
+        attributes=attributes_map(detail),
     )
     merged = merge(raw_listing, bertic_summary, cv_summary)
 
