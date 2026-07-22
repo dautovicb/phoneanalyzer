@@ -3,6 +3,7 @@
   "cls_token": "[CLS]",
   "do_lower_case": false,
   "is_local": false,
+  "local_files_only": false,
   "mask_token": "[MASK]",
   "max_len": 512,
   "model_max_length": 512,

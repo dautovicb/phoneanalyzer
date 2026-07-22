@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import tempfile
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -25,11 +26,79 @@ from .olx_client import extract_listing_id, fetch_listing_detail, fetch_listing_
 
 DETECTION_THRESHOLD = 0.45
 
-_CRACKED_RE = re.compile(r"(puknut|pukla|crack|cracked|razbijen|razbijeno)")
-_NOT_WORKING_RE = re.compile(r"(ne\s*rad(i|e)|not\s*work|does\s*not\s*work|defekt)")
+# ── Red-flag categorisation ────────────────────────────────────────────────
+# BERTic already decided which phrases are defects (the FAIL spans); these
+# patterns only ROUTE each span to a red-flag column. They run against the FAIL
+# spans after diacritic folding, so they can stay ASCII and still match both
+# "koči"/"koci", "zvučnik"/"zvucnik", etc. Because the input is already the set
+# of model-flagged defects, the patterns can be permissive without over-firing
+# on ordinary description text.
+_CRACK_RE = re.compile(
+    r"(puknu|pukla|puklo|pukotin|napuk|naprsl|razbij|slomljen|crack|smrskan|ostec|ostet)"
+)
+_CRACK_BACK_HINT_RE = re.compile(r"(zadnj|pozadi|nazad|ledj|\bback\b|kucist)")
+_CRACK_FRONT_HINT_RE = re.compile(r"(ekran|displej|display|lcd|oled|naprijed|prednj|touch)")
+
+# Everything that means "this phone is not fully working". Per the product
+# decision a replaced/aftermarket SCREEN ("mijenjan/zamijenjen displej") folds
+# in here; a replaced BATTERY does not (a new battery is neutral/positive), so
+# the replaced-part clause is anchored to a screen/glass noun.
+_NOT_WORKING_RE = re.compile(
+    r"ne\s*rad"                                              # ne radi / ne rade
+    r"|ne\s*pali|ne\s*ukljuc|nece\s*(da\s*)?(se\s*)?(upali|ukljuc)|ne\s*mogu\s*da\s*(ga\s*)?upal"
+    r"|gasi\s*se|ugasi\s*se|se\s*gasi|zna\s*(se|da\s*se)\s*ugasi|pali\s*i\s*gasi|sam\s*gasi"
+    r"|restart|resetuje\s*se\s*sam|resetira|vrti\s*logo|logo\s*blinka|blinka|boot\s*loop"
+    r"|koci|zamrzava|smrzava|bagu"
+    r"|ne\s*reagira|ne\s*reaguje|ne\s*registr|ne\s*prepoznaje"
+    r"|za\s*dij?elove"
+    r"|pokvaren|neispravan|u\s*kvaru|\bkvar\b|defekt"
+    r"|mrtav?\s*piksel|mrtvih?\s*piksel|mrtva\s*piksel|dead\s*pixel|mrtvi\s*piksel"
+    r"|burn|zapecen|gorenje\s*ekran|zut[ae]\s*(mrlj|fleka)"
+    r"|linij|mrlj|flek|prasin"
+    r"|napuh|brzo\s*se\s*prazni|kratko\s*traje|slaba\s*bater|drzi\s*(jako\s*)?kratko"
+    r"|ne\s*puni|slabo\s*se\s*puni|ne\s*hvata\s*signal|nema\s*signal"
+    r"|(mijenj|mjenj|zamijenj|zamjenj|promijenj|promjenj|zamjensk|nije\s*original|aftermarket)"
+        r"[\s\w]{0,12}?(displej|ekran|display|lcd|oled|panel|staklo|touch)"
+    r"|(displej|ekran|lcd|oled|touch|panel)\s*(je\s*)?(mijenj|mjenj|zamijenj|zamjenj|promijenj)"
+    r"|not\s*work|does\s*not\s*work|problem\s*sa|ima\s*problem|ima\s*gresku|javlja\s*gresku"
+    r"|\bmdm\b|bypass|odvojio|grije|pregrijava|fokusira|zamagljen|mutn|slika\s*mutna"
+)
 _LOCKED_RE = re.compile(r"(lock|locked|zakljucan|zakljucana)")
 _NO_RE = re.compile(r"\b(no|bez|nije)\b")
 _BOX_RE = re.compile(r"(box|kutija|full\s*box|puna\s*kutija)")
+
+
+def _fold(text: str) -> str:
+    """Lower-case and strip diacritics so keyword matching is accent-insensitive."""
+    if not text:
+        return ""
+    norm = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+    return norm.lower()
+
+
+def _issue_red_flags(issues) -> Dict[str, int]:
+    """Route the BERTic FAIL spans to red-flag columns.
+
+    `issues` is the list of defect phrases the model extracted (possibly empty,
+    or — for backwards safety — a single string). A listing can carry several
+    independent defects, so we fold them into one blob and OR the families.
+    """
+    if isinstance(issues, str):
+        issues = [issues] if issues else []
+    blob = _fold(" ; ".join(issues))
+
+    crack = bool(_CRACK_RE.search(blob))
+    back = bool(_CRACK_BACK_HINT_RE.search(blob))
+    front_hint = bool(_CRACK_FRONT_HINT_RE.search(blob))
+    glass = "staklo" in blob  # "staklo" without a screen word means the back glass
+    return {
+        # Back if there's a back hint, or bare "staklo" damage with no screen
+        # word. Front if a screen word is named, or a hint-less/glass-less crack
+        # ("razbijen") — the front screen is the default and more penalising.
+        "cracked_back": int(crack and (back or (glass and not front_hint))),
+        "cracked_front": int(crack and (front_hint or (not back and not glass))),
+        "not_functioning": int(bool(_NOT_WORKING_RE.search(blob))),
+    }
 
 
 class PipelineError(Exception):
@@ -244,21 +313,23 @@ def summarize_cv(analysis: Dict) -> Dict:
 def summarize_bertic(text: str) -> tuple[Dict, list]:
     features, raw_entities = extract_features(text or "")
 
-    issues = features.get("issues") or ""
+    issues = features.get("issues") or []
     icloud = features.get("icloud") or ""
     sim = features.get("sim") or ""
     box = features.get("box") or ""
+
+    flags = _issue_red_flags(issues)
 
     summary = {
         "model": features.get("model"),
         "storage_gb": features.get("storage_gb"),
         "battery_health_pct": features.get("battery_pct"),
         "condition_claim": features.get("condition"),
-        "red_flag_cracked_front": _bool_from_phrase(issues, _CRACKED_RE),
-        "red_flag_cracked_back": 0,
+        "red_flag_cracked_front": flags["cracked_front"],
+        "red_flag_cracked_back": flags["cracked_back"],
         "red_flag_icloud_locked": _bool_from_phrase(icloud, _LOCKED_RE),
         "red_flag_sim_locked": _bool_from_phrase(sim, _LOCKED_RE),
-        "red_flag_not_functioning": _bool_from_phrase(issues, _NOT_WORKING_RE),
+        "red_flag_not_functioning": flags["not_functioning"],
         "has_original_box": _bool_from_phrase(box, _BOX_RE, _NO_RE),
     }
     return summary, raw_entities
