@@ -1,0 +1,79 @@
+# Test listings for the crack + red-flag pipeline. One URL per line.
+# Ground truth (taken from each seller's own description) is noted inline after '#'
+# so you can score precision/recall against the harness output.
+#
+# Run from ml/phoneanalyzer/:
+#   python models/crack_detection/test_listings.py --save-crops
+#
+# Categories: CLEAN = no damage | BACK = cracked back glass | FRONT = cracked
+# screen | BOTH = front+back | PIXEL = dead/stuck pixel | NOTWORK = not
+# functioning. Some listings carry more than one flag (noted inline).
+# ~62 listings; heaviest on CLEAN (precision) and BACK (the current blind spot).
+
+# ── CLEAN (should NOT be flagged) ──
+https://olx.ba/artikal/78267472  # CLEAN — iPhone 15, bez oštećenja
+https://olx.ba/artikal/78265811  # CLEAN — iPhone 7, bez oštećenja
+https://olx.ba/artikal/78162549  # CLEAN — iPhone 11, očuvan
+https://olx.ba/artikal/77707347  # CLEAN — iPhone 11, kao nov 100%
+https://olx.ba/artikal/78127506  # CLEAN — iPhone 14 Pro, sve besprijekorno
+https://olx.ba/artikal/78284312  # CLEAN — iPhone 13 Pro, kao nov
+https://olx.ba/artikal/77244741  # CLEAN — iPhone 14 Pro, 10/10
+https://olx.ba/artikal/78201552  # CLEAN — kao nov, bez traga
+https://olx.ba/artikal/77282300  # CLEAN — iPhone 14, potpuno ispravan
+https://olx.ba/artikal/78201781  # CLEAN — iPhone 12 Pro, kao nov
+https://olx.ba/artikal/77811792  # CLEAN — iPhone XR, bez oštećenja
+https://olx.ba/artikal/75946366  # CLEAN — iPhone 13 Pro Max, kao nov
+https://olx.ba/artikal/77987316  # CLEAN — iPhone 16 Pro, 10/10
+https://olx.ba/artikal/77968158  # CLEAN — iPhone 15, bez ikakvih problema
+https://olx.ba/artikal/78284253  # CLEAN — kao nov, sve originalno
+https://olx.ba/artikal/77536241  # CLEAN (hard neg) — zaštitno staklo puklo, telefon čist
+
+# ── BACK (cracked back glass — the current blind spot) ──
+https://olx.ba/artikal/78223060  # BACK — oštećeno zadnje staklo
+https://olx.ba/artikal/78014677  # BACK — nazad razbijen
+https://olx.ba/artikal/78177580  # BACK — napuklo zadnje staklo
+https://olx.ba/artikal/77764897  # BACK — razbijeno zadnje staklo (displej/Face ID ok)
+https://olx.ba/artikal/77863804  # BACK — razbijeno zadnje staklo
+https://olx.ba/artikal/78056150  # BACK — puklo zadnje staklo (+ mijenjan displej)
+https://olx.ba/artikal/77796244  # BACK — razbijeno zadnje staklo
+https://olx.ba/artikal/77682663  # BACK — zadnje staklo razbijeno
+https://olx.ba/artikal/78205591  # BACK — puklo zadnje staklo
+https://olx.ba/artikal/78268229  # BACK — razbijeno staklo na leđima
+https://olx.ba/artikal/76266140  # BACK — oštećeno zadnje staklo
+https://olx.ba/artikal/78260982  # BACK — oštećen zadnji poklopac
+https://olx.ba/artikal/77576351  # BACK — zadnje staklo puklo
+https://olx.ba/artikal/77440015  # BACK — oštećenje na zadnjem staklu (sitno)
+
+# ── BOTH (front + back) ──
+https://olx.ba/artikal/77927012  # BOTH — razbijen pozadi i naprijed
+https://olx.ba/artikal/78117284  # BOTH — puknut displej i zadnje staklo
+
+# ── FRONT (cracked / damaged screen) ──
+https://olx.ba/artikal/78266596  # FRONT — oštećenje u ćošku displeja
+https://olx.ba/artikal/78210803  # FRONT + NOTWORK — napuko, ne radi Face ID
+https://olx.ba/artikal/78173864  # FRONT + NOTWORK — napuknuće, kamera vibrira
+https://olx.ba/artikal/78223089  # FRONT — ekran oštećen
+https://olx.ba/artikal/77824897  # FRONT — napukao ekran u ćošku
+https://olx.ba/artikal/77431391  # FRONT — oštećenje gornji dio ekrana
+https://olx.ba/artikal/77274567  # FRONT — ekran razbijen + linije (+ iCloud)
+https://olx.ba/artikal/78162144  # FRONT — linija na ekranu
+https://olx.ba/artikal/75749377  # FRONT — ekran oštećen ali radi
+https://olx.ba/artikal/78163006  # FRONT — oštećen displej
+https://olx.ba/artikal/77900991  # FRONT — razbijen ekran (za dijelove)
+https://olx.ba/artikal/77845625  # FRONT — napukao donji dio ekrana
+
+# ── PIXEL (dead / stuck pixel) ──
+https://olx.ba/artikal/78018394  # PIXEL — jedan piksel na ekranu
+https://olx.ba/artikal/78262506  # PIXEL — mrtvi piksel
+https://olx.ba/artikal/76044488  # PIXEL — dva mrtva piksela
+
+# ── NOTWORK (not functioning) ──
+https://olx.ba/artikal/77981092  # NOTWORK — displej ne registruje dodir
+https://olx.ba/artikal/78229425  # NOTWORK — bootloop, crta na ekranu
+https://olx.ba/artikal/77812754  # NOTWORK — ne radi Volume UP
+https://olx.ba/artikal/77841684  # NOTWORK — ne radi gornji zvučnik
+https://olx.ba/artikal/77989556  # NOTWORK — za dijelove
+https://olx.ba/artikal/78263438  # NOTWORK — Face ID ne radi
+https://olx.ba/artikal/77524446  # NOTWORK — treba reparirati displej
+https://olx.ba/artikal/77688154  # NOTWORK — ne radi Face ID
+https://olx.ba/artikal/75749439  # NOTWORK — Face ID ne radi, kamera trese

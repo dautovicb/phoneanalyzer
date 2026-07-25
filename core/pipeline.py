@@ -52,7 +52,7 @@ _NOT_WORKING_RE = re.compile(
     r"|ne\s*reagira|ne\s*reaguje|ne\s*registr|ne\s*prepoznaje"
     r"|za\s*dij?elove"
     r"|pokvaren|neispravan|u\s*kvaru|\bkvar\b|defekt"
-    r"|mrtav?\s*piksel|mrtvih?\s*piksel|mrtva\s*piksel|dead\s*pixel|mrtvi\s*piksel"
+    r"|piksel|pixel"  # any pixel defect: "mrtav/zapeo/jedan piksel" — safe because this runs only on FAIL spans, not marketing "12 megapiksela"
     r"|burn|zapecen|gorenje\s*ekran|zut[ae]\s*(mrlj|fleka)"
     r"|linij|mrlj|flek|prasin"
     r"|napuh|brzo\s*se\s*prazni|kratko\s*traje|slaba\s*bater|drzi\s*(jako\s*)?kratko"
@@ -276,21 +276,35 @@ def build_raw_listing(
 
 # --- CV summary -----------------------------------------------------------
 
-def _check_crack(best_crops: Dict, key: str) -> tuple[bool, float, Optional[str]]:
-    if key not in best_crops:
-        return False, 0.0, None
-    _, source, crop = best_crops[key]
-    cracked, confidence = predict_crack(crop)
-    return cracked, confidence, str(source)
+def _check_crack(all_crops: Dict, key: str) -> tuple[bool, float, Optional[str]]:
+    """Run the crack classifier over EVERY crop of `key` and keep the strongest
+    signal (max-pool over P(cracked)).
+
+    Scoring only the single best-*detected* crop misses damage that shows in just
+    one photo — an angled shot of a hairline crack, or a screen-on frame — because
+    detection confidence ranks clarity of the phone, not visibility of the defect.
+    A crack in any photo means cracked, so we take the crop with the highest
+    P(cracked). The trade-off is more exposure to glare/screen-protector false
+    alarms across the extra crops, held back by predict_crack's own threshold.
+    """
+    crops = all_crops.get(key) or []
+    best_cracked, best_conf, best_src = False, 0.0, None
+    for _conf, source, crop in crops:
+        cracked, confidence = predict_crack(crop)
+        if confidence > best_conf:
+            best_cracked, best_conf, best_src = cracked, confidence, str(source)
+    return best_cracked, best_conf, best_src
 
 
 def summarize_cv(analysis: Dict) -> Dict:
-    best_crops = analysis.get("best_crops", {})
+    # all_crops holds every crop per class; the crack check max-pools over them.
+    # best_crops (single best per class) still drives OCR/spec reads elsewhere.
+    all_crops = analysis.get("all_crops", {})
     crack_sources = {}
     crack_confidence = 0.0
 
-    front_cracked, front_conf, front_src = _check_crack(best_crops, "phone_front")
-    back_cracked, back_conf, back_src = _check_crack(best_crops, "phone_back")
+    front_cracked, front_conf, front_src = _check_crack(all_crops, "phone_front")
+    back_cracked, back_conf, back_src = _check_crack(all_crops, "phone_back")
 
     for key, src, conf in [("phone_front", front_src, front_conf), ("phone_back", back_src, back_conf)]:
         if src:

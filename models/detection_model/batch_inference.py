@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 from PIL import Image, UnidentifiedImageError
 
@@ -13,8 +13,10 @@ from .ocr_utils import extract_specs_from_best
 # Common image suffixes for listing photos.
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
-# class_name -> (confidence, source_image_path, crop_image)
+# class_name -> (confidence, source_image_path, crop_image) — single best crop.
 BestResult = Dict[str, Tuple[float, Path, Image.Image]]
+# class_name -> every (confidence, source_image_path, crop_image) for that class.
+AllResults = Dict[str, List[Tuple[float, Path, Image.Image]]]
 
 
 def iter_images(input_dir: Path, recursive: bool) -> Iterable[Path]:
@@ -24,8 +26,19 @@ def iter_images(input_dir: Path, recursive: bool) -> Iterable[Path]:
         yield from (p for p in input_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES)
 
 
-def collect_best_detections(input_dir: Path, session: "ort.InferenceSession", threshold: float, recursive: bool) -> BestResult:
+def collect_detections(input_dir: Path, session: "ort.InferenceSession", threshold: float, recursive: bool) -> Tuple[BestResult, AllResults]:
+    """Scan a folder once and return (best_by_class, all_by_class).
+
+    best_by_class keeps the single highest-detection-confidence crop per class —
+    the right pick for OCR / spec reads, where we want the clearest shot of the
+    phone. all_by_class keeps *every* crop per class so damage checks can look
+    across all photos: detection confidence measures "how sure am I this is a
+    phone front", not "how visible is the damage", so a crack (or a screen-on
+    dead pixel) that shows only in one angled shot would be missed if we scored
+    just the best-detected crop.
+    """
     best_by_class: BestResult = {}
+    all_by_class: AllResults = {}
 
     for image_path in iter_images(input_dir, recursive):
         try:
@@ -39,14 +52,21 @@ def collect_best_detections(input_dir: Path, session: "ort.InferenceSession", th
             continue
 
         for cls_name, conf, crop in crops:
+            all_by_class.setdefault(cls_name, []).append((conf, image_path, crop))
             current = best_by_class.get(cls_name)
             if current is None or conf > current[0]:
                 best_by_class[cls_name] = (conf, image_path, crop)
 
+    return best_by_class, all_by_class
+
+
+def collect_best_detections(input_dir: Path, session: "ort.InferenceSession", threshold: float, recursive: bool) -> BestResult:
+    """Backwards-compatible shim: just the best crop per class."""
+    best_by_class, _ = collect_detections(input_dir, session, threshold, recursive)
     return best_by_class
 
 
-def build_analysis(best_by_class: BestResult) -> Dict:
+def build_analysis(best_by_class: BestResult, all_by_class: AllResults | None = None) -> Dict:
     specs = extract_specs_from_best(best_by_class)
     return {
         "internal_memory": specs["internal_memory"],
@@ -61,19 +81,21 @@ def build_analysis(best_by_class: BestResult) -> Dict:
         },
         "ocr_text": specs["ocr_text"],
         "best_crops": best_by_class,
+        # Every crop per class — the crack check max-pools over these.
+        "all_crops": all_by_class if all_by_class is not None else {},
     }
 
 
 def analyze_folder(input_dir: Path, threshold: float, session: "ort.InferenceSession | None" = None, model_path: str | None = None, recursive: bool = False) -> Dict:
     if session is None:
         session = load_model(model_path) if model_path else load_model()
-    best_by_class = collect_best_detections(
+    best_by_class, all_by_class = collect_detections(
         input_dir=input_dir,
         session=session,
         threshold=threshold,
         recursive=recursive,
     )
-    return build_analysis(best_by_class)
+    return build_analysis(best_by_class, all_by_class)
 
 
 def save_results(best_by_class: BestResult, output_dir: Path) -> None:

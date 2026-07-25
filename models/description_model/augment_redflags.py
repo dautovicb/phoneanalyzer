@@ -355,6 +355,52 @@ EXAMPLES = [
     ("iphone 15 Pro 128 GB, mijenjan displej ne baš najbolje, ne radi face recognition, za ove pare valja",
      [("iphone 15 Pro", "MOD"), ("128 GB", "MEM"), ("mijenjan displej", "FAIL"),
       ("ne radi face recognition", "FAIL")]),
+
+    # ── M. Back-glass & display damage + dead pixels — real phrasings the model
+    #    under-extracted in production: it tagged "staklo" but dropped the damage
+    #    verb ("oštećeno"), missed "razbijen"/"napuklo" outright, and left a
+    #    disclosed "jedan piksel" unrouted. Both diacritic and plain-ASCII
+    #    spellings (as sellers actually type them) are included on purpose. ──
+    ("iPhone 8 Plus u dobrom stanju, nazad razbijen, ekran kao nov, sve radi normalno",
+     [("iPhone 8 Plus", "MOD"), ("dobrom stanju", "COND"), ("nazad razbijen", "FAIL")]),
+    ("iPhone 8 64 GB, oštećeno zadnje staklo, ne smeta pri radu, zdravlje baterije 82 %",
+     [("iPhone 8", "MOD"), ("64 GB", "MEM"), ("oštećeno zadnje staklo", "FAIL"), ("82 %", "BATT")]),
+    ("iPhone 11, zadnje staklo razbijeno, prednji ekran čist, sve funkcije rade",
+     [("iPhone 11", "MOD"), ("zadnje staklo razbijeno", "FAIL")]),
+    ("iPhone 12 Pro, ima ostecenje na zadnjem staklu, ekran bez greske, baterija 88 %",
+     [("iPhone 12 Pro", "MOD"), ("ostecenje na zadnjem staklu", "FAIL"), ("88 %", "BATT")]),
+    ("iPhone XR, napuklo staklo na poleđini, prednja strana netaknuta",
+     [("iPhone XR", "MOD"), ("napuklo staklo na poleđini", "FAIL")]),
+    ("iPhone 13, zadnja strana napukla, displej ispravan, baterija 79 %",
+     [("iPhone 13", "MOD"), ("zadnja strana napukla", "FAIL"), ("79 %", "BATT")]),
+    ("iPhone 14 Pro, staklo pozadi ispucano, radi besprijekorno, baterija 90 %",
+     [("iPhone 14 Pro", "MOD"), ("staklo pozadi ispucano", "FAIL"), ("90 %", "BATT")]),
+    ("iPhone X, zadnje staklo puklo, ekran radi normalno, za svakodnevnu upotrebu",
+     [("iPhone X", "MOD"), ("zadnje staklo puklo", "FAIL")]),
+    ("iPhone 12 mini, poleđina napukla u uglu, prednja strana čista, baterija 85 %",
+     [("iPhone 12 mini", "MOD"), ("poleđina napukla", "FAIL"), ("85 %", "BATT")]),
+    ("iPhone 13 128 GB, lagano oštećenje u ćošku displeja, ostalo uredno, baterija 78 %",
+     [("iPhone 13", "MOD"), ("128 GB", "MEM"), ("oštećenje u ćošku displeja", "FAIL"), ("78 %", "BATT")]),
+    ("iPhone 12, ostecenje u cosku ekrana, ne smeta pri radu",
+     [("iPhone 12", "MOD"), ("ostecenje u cosku ekrana", "FAIL")]),
+    ("iPhone 11 Pro, displej oštećen u gornjem uglu, funkcije rade normalno",
+     [("iPhone 11 Pro", "MOD"), ("displej oštećen u gornjem uglu", "FAIL")]),
+    ("iPhone XS, staklo ispucano i ima napuknuće, zadnja kamera zna da vibrira pa stane",
+     [("iPhone XS", "MOD"), ("staklo ispucano", "FAIL"), ("napuknuće", "FAIL"),
+      ("kamera zna da vibrira", "FAIL")]),
+    ("iPhone 14 Pro 128 GB, ima jedan piksel na ekranu koji ne smeta pri radu, baterija 77 %",
+     [("iPhone 14 Pro", "MOD"), ("128 GB", "MEM"), ("jedan piksel na ekranu", "FAIL"), ("77 %", "BATT")]),
+    ("iPhone 12, jedan piksel ne radi na displeju, jedva se primijeti",
+     [("iPhone 12", "MOD"), ("jedan piksel ne radi", "FAIL")]),
+    ("iPhone 11, zapeo piksel na ekranu, na tamnoj pozadini se vidi",
+     [("iPhone 11", "MOD"), ("zapeo piksel", "FAIL")]),
+    ("iPhone 13 Pro, ima jedan crveni piksel, ne smeta pri gledanju",
+     [("iPhone 13 Pro", "MOD"), ("jedan crveni piksel", "FAIL")]),
+    # hard negatives: "piksel"/"staklo" mentions that are NOT defects
+    ("iPhone 13, kamera 12 megapiksela, ekran bez ijednog mrtvog piksela, kao nov",
+     [("iPhone 13", "MOD"), ("kao nov", "COND")]),
+    ("iPhone 12, zaštitno staklo zalijepljeno, zadnje staklo bez oštećenja, sve radi",
+     [("iPhone 12", "MOD")]),
 ]
 
 

@@ -8,8 +8,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 # config
 base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dataset')
-IMG_SIZE = (224, 224)
-BATCH_SIZE = 32
+IMG_SIZE = (384, 384)
+BATCH_SIZE = 16
 
 # data loading
 
@@ -52,17 +52,17 @@ data_augmentation = models.Sequential([
     layers.RandomZoom(0.1),
 ])
 
-# loading convnext tiny
+# loading convnext 
 
-base_model = tf.keras.applications.ConvNeXtTiny(
+base_model = tf.keras.applications.ConvNeXtBase(
     include_top=False,
     weights='imagenet',
-    input_shape=(224, 224, 3)
+    input_shape=IMG_SIZE + (3,)
 )
 base_model.trainable = False
 
 model = models.Sequential([
-    layers.Input(shape=(224, 224, 3)),
+    layers.Input(shape=IMG_SIZE + (3,)),
     data_augmentation,
     base_model,
     layers.GlobalAveragePooling2D(),

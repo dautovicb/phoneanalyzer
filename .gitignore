@@ -3,3 +3,8 @@ wandb
 testimages
 batch_output
 venv
+
+# Benchmark artifacts from models/crack_detection/test_listings.py — per-listing
+# crops and results.csv, regenerated on every run and large (hundreds of JPEGs).
+listing_test_out*/
+underpriced_crops/
