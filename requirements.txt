@@ -25,3 +25,10 @@ requests
 
 # Demo UI — only needed to run demo/app.py
 streamlit
+
+# Dataset tooling — only needed to run
+# models/crack_detection/fetch_olx_crops.py, which reads candidate listing ids
+# from the backend's Postgres and its creds from backend/'s .env layering.
+# Not on the analyze_listing() path.
+psycopg2-binary
+python-dotenv

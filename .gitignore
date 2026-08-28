@@ -3,8 +3,16 @@ wandb
 testimages
 batch_output
 venv
+.DS_Store
 
 # Benchmark artifacts from models/crack_detection/test_listings.py — per-listing
 # crops and results.csv, regenerated on every run and large (hundreds of JPEGs).
 listing_test_out*/
 underpriced_crops/
+vlm/
+
+# Crack-detection training data. Deliberately dropped from the repo in f62b9f3
+# — ~120MB of crops that .gitattributes' `**/dataset/**` rule would otherwise
+# drag straight back into LFS on a stray `git add -A`. Scoped to this model on
+# purpose: description_model/ and detection_model/ still track theirs in LFS.
+models/crack_detection/dataset/

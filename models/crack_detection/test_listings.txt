@@ -8,7 +8,12 @@
 # Categories: CLEAN = no damage | BACK = cracked back glass | FRONT = cracked
 # screen | BOTH = front+back | PIXEL = dead/stuck pixel | NOTWORK = not
 # functioning. Some listings carry more than one flag (noted inline).
-# ~62 listings; heaviest on CLEAN (precision) and BACK (the current blind spot).
+# ~77 listings; heaviest on CLEAN (precision) and BACK (the current blind spot).
+# Batch added 2026-07-28: fresh live listings pulled via OLX's search API
+# (state=2, last 2 months), hand-labelled from each seller's own description
+# text only (never from photos or the crack model's own output, to avoid
+# circularity). Ambiguous cases (unclear which side, ambiguous severity,
+# no qualifying detail) were left out rather than guessed.
 
 # ── CLEAN (should NOT be flagged) ──
 https://olx.ba/artikal/78267472  # CLEAN — iPhone 15, bez oštećenja
@@ -27,6 +32,18 @@ https://olx.ba/artikal/77987316  # CLEAN — iPhone 16 Pro, 10/10
 https://olx.ba/artikal/77968158  # CLEAN — iPhone 15, bez ikakvih problema
 https://olx.ba/artikal/78284253  # CLEAN — kao nov, sve originalno
 https://olx.ba/artikal/77536241  # CLEAN (hard neg) — zaštitno staklo puklo, telefon čist
+https://olx.ba/artikal/78402982  # CLEAN — iPhone 14, sve ispravno, bez ogrebotina
+https://olx.ba/artikal/78158999  # CLEAN — iPhone 13 Pro Max, bez i najmanjeg traga korištenja
+https://olx.ba/artikal/78395464  # CLEAN — iPhone 15, kao nov, nema nijedne ogrebotine
+https://olx.ba/artikal/78383637  # CLEAN — iPhone 13 Pro Max, 10/10, bez ijedne ogrebotine
+https://olx.ba/artikal/78374500  # CLEAN — iPhone 13, bez ikakvih oštećenja
+https://olx.ba/artikal/78367642  # CLEAN — iPhone 13, bez oštećenja, radi perfektno
+https://olx.ba/artikal/78353940  # CLEAN — iPhone 12 Pro Max, tragovi isključivo estetske prirode
+https://olx.ba/artikal/78331531  # CLEAN (hard neg) — iPhone 14, ogrebotina na lajsni pod maskicom
+https://olx.ba/artikal/78367174  # CLEAN (hard neg) — iPhone XR, sitne ogrebotine na ekranu (ne pukotine)
+https://olx.ba/artikal/78308356  # CLEAN (hard neg) — pukotine na zaštitnom staklu, telefon ispravan
+https://olx.ba/artikal/78328887  # CLEAN (hard neg) — ekran zamijenjen kvalitetnim ekranom, nije puknut
+https://olx.ba/artikal/78308784  # CLEAN (hard neg) — u prošlosti zamijenjen displej, sad bez tragova
 
 # ── BACK (cracked back glass — the current blind spot) ──
 https://olx.ba/artikal/78223060  # BACK — oštećeno zadnje staklo
@@ -43,6 +60,9 @@ https://olx.ba/artikal/76266140  # BACK — oštećeno zadnje staklo
 https://olx.ba/artikal/78260982  # BACK — oštećen zadnji poklopac
 https://olx.ba/artikal/77576351  # BACK — zadnje staklo puklo
 https://olx.ba/artikal/77440015  # BACK — oštećenje na zadnjem staklu (sitno)
+https://olx.ba/artikal/78386428  # BACK — zadnji poklopac je razbijen
+https://olx.ba/artikal/78384749  # BACK — oštećeno zadnje staklo, ne smeta pri radu
+https://olx.ba/artikal/78353735  # BACK + PIXEL — osteceno zadnje staklo i mrtav piksel
 
 # ── BOTH (front + back) ──
 https://olx.ba/artikal/77927012  # BOTH — razbijen pozadi i naprijed
@@ -61,11 +81,13 @@ https://olx.ba/artikal/75749377  # FRONT — ekran oštećen ali radi
 https://olx.ba/artikal/78163006  # FRONT — oštećen displej
 https://olx.ba/artikal/77900991  # FRONT — razbijen ekran (za dijelove)
 https://olx.ba/artikal/77845625  # FRONT — napukao donji dio ekrana
+https://olx.ba/artikal/78377771  # FRONT + NOTWORK — slomljen ekran, mikrofon crkao
 
 # ── PIXEL (dead / stuck pixel) ──
 https://olx.ba/artikal/78018394  # PIXEL — jedan piksel na ekranu
 https://olx.ba/artikal/78262506  # PIXEL — mrtvi piksel
 https://olx.ba/artikal/76044488  # PIXEL — dva mrtva piksela
+https://olx.ba/artikal/78345889  # PIXEL — bijele tačke i bijela linija na displayu
 
 # ── NOTWORK (not functioning) ──
 https://olx.ba/artikal/77981092  # NOTWORK — displej ne registruje dodir
@@ -77,3 +99,7 @@ https://olx.ba/artikal/78263438  # NOTWORK — Face ID ne radi
 https://olx.ba/artikal/77524446  # NOTWORK — treba reparirati displej
 https://olx.ba/artikal/77688154  # NOTWORK — ne radi Face ID
 https://olx.ba/artikal/75749439  # NOTWORK — Face ID ne radi, kamera trese
+https://olx.ba/artikal/78395724  # NOTWORK — face id ne radi
+https://olx.ba/artikal/78388885  # NOTWORK — Face ID ne radi, zadnja kamera pokvarena
+https://olx.ba/artikal/78366097  # NOTWORK — zaključan, ne može se koristiti
+https://olx.ba/artikal/78357988  # NOTWORK — restartuje se, prednja kamera ne radi

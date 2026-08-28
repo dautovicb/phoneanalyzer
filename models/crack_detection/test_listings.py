@@ -74,6 +74,17 @@ REGISTRY = {
     # same net re-exported by 3.12 without optimizer state — the one to benchmark
     # here. Drop this alias once the runtime moves to >= 3.13.
     "v4_local": MODEL_DIR / "crack_detector_v4_local.keras",
+    "v5": MODEL_DIR / "crack_detector_v5.keras",
+    # v6 flips label polarity at training time (see cracks_v4.ipynb / meta.json):
+    # raw sigmoid output IS P(cracked) directly. Run with --no-flip, unlike
+    # every earlier version. Validation-selected threshold (target precision
+    # 0.9) is 0.871, not 0.5 -- see crack_detector_meta.json.
+    "v6": MODEL_DIR / "crack_detector_v6.keras",
+    # v7 is v6's architecture retrained at 512x512 input (up from 384x384) --
+    # model_input_size() picks this up automatically off the loaded model, no
+    # code change needed. Same v6 label convention: --no-flip. Validation
+    # threshold (target precision 0.9) is 0.519 -- see crack_detector_meta_v7.json.
+    "v7": MODEL_DIR / "crack_detector_v7.keras",
 }
 
 
